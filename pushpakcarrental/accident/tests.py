@@ -85,15 +85,13 @@ class Accident_methods_test(TestCase):
     def test_reportaccident(self):
         
         newUser=User.objects.create_user(username="robots",email="robots@gmail.com",password="passs")
-    
+        self.client.login(username='robots', password='passs')
         reportaccident = Report_Accident.objects.create(user=newUser,report_accident="help me",accident_date = "2022-08-05")
-        reportaccident.user_id=newUser.id
         reportaccident.save()
         
         data={
             "user_id":newUser.id,
             "report_accident":"accident happeneds",
-            "accident_date":"2022-08-05"
         }
         response=self.client.post("/accident/reportaccident/",data=data)
         self.assertEqual(response.status_code,200)
