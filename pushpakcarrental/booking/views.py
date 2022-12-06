@@ -7,22 +7,23 @@ from .models import *
 from django.contrib import messages
 # Create your views here.
 def fareEstimator(request):
-    if request.method == 'POST':
-        capacity = request.POST['capacity']
-        from_date = datetime.datetime.strptime(request.POST['from_date']+ ' ' + request.POST['from_time'], '%Y-%m-%d %H:%M')
-        to_date = datetime.datetime.strptime(request.POST['to_date'] + ' ' + request.POST['to_time'], '%Y-%m-%d %H:%M')
-        difference = to_date-from_date
-        c = round(float(round(difference.total_seconds() / (3600), 2)) * 1 * float(capacity),2)
-        book_car = Book_Car(user_id=request.user, capacity=capacity,from_date=from_date,to_date=to_date,rent=c,is_paid=False, confirmation=False)
-        success = "Your estimated fare is $"+str(c)
-        return render(request, 'fare_estimator.html',{'success':success})  
     return render(request, 'fare_estimator.html')
 
 def editBooking(request):
     if request.method == 'POST':
         booking_id = request.POST['id']
         booking = Book_Car.objects.filter(id=booking_id).first()
-        return render(request, 'editbooking.html',{'booking':booking})
+        from_date = booking.from_date
+        to_date = booking.to_date
+        return render(request, 'editbooking.html',{
+            'id':booking.id,
+            'capacity':booking.capacity,
+            'from_date':from_date.strftime("%Y-%m-%d"),
+            'to_date':to_date.strftime("%Y-%m-%d"),
+            'from_time':from_date.strftime("%H:%M"),
+            'to_time':to_date.strftime("%H:%M"),
+            'subscription':booking.subscription,
+            })
     pass
 
 def updateBooking(request):
@@ -61,31 +62,17 @@ def rescheduleBooking(request):
 def bookCar(request):
     if request.method == 'POST':
         capacity = request.POST['capacity']
-        Coupon=0
-        check=1
-        Coupon = request.POST['coupon']
-        if(Coupon==''):
-            Coupon=0
-            check=0
-        elif(Coupon!=''):
-            Coupon=50
-                
         from_date = datetime.datetime.strptime(request.POST['from_date']+ ' ' + request.POST['from_time'], '%Y-%m-%d %H:%M')
         to_date = datetime.datetime.strptime(request.POST['to_date'] + ' ' + request.POST['to_time'], '%Y-%m-%d %H:%M')
         difference = to_date-from_date
         c = round(float(round(difference.total_seconds() / (3600), 2)) * 1 * float(capacity),2)
-        # book_car = Book_Car(user_id=request.user, capacity=capacity,from_date=from_date,to_date=to_date,rent=c,is_paid=False, confirmation=False)
-        # book_car.save()
-        if(Coupon!=0 and check==1):
-            success = "Your booking is being processed and the bill for your booking after applying coupon is $"+str(c-float(Coupon))
-            c=c-float(Coupon)
-        else:
-            success = "Your booking is being processed and the bill for your booking is $"+str(c)       
-        #success = "Your booking is being processed and the bill for your booking is $"+str(c)
-        book_car = Book_Car(user_id=request.user, capacity=capacity,from_date=from_date,to_date=to_date,rent=c,is_paid=False, confirmation=False)
-        book_car.save()
-        return render(request, 'bookcar.html',{'success':success})  
+        subscription = request.POST['subscription']
+        book_car = Book_Car(user=request.user, capacity=capacity,from_date=from_date,to_date=to_date,rent=c,is_paid=False, confirmation=False, subscription=subscription)
         
+        book_car.save()
+        success = "Your booking is being processed and the bill for your booking is $"+str(c)
+        return render(request, 'bookcar.html',{'success':success})  
+
     return render(request, 'bookcar.html')  
 
 def finalizeCar(request):
